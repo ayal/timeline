@@ -1,0 +1,12 @@
+- bug on click to move on big axis
+- jump on start: get rid of -5000 (decide on ratio between timelines in config)
+- max zoom in / out
+   - and put this in config
+- circles if not length and colors on small axis 
+- change tick interval when zooming
+- move headline / text / img to config
+- move config to file / hash
+- move tick configs to big config
+- disable double click
+- make sure offset works
+- hebrew

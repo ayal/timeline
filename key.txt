@@ -1,0 +1,6 @@
+App ID (Client ID)	ayalgell-columbo-PRD-045f8a2bd-9672103b
+User Tokens|Notifications|API Reports
+Dev ID	eab61f65-0d98-4c55-9dad-ce98f0aa257c	
+Cert ID (Client Secret)	PRD-45f8a2bda2d5-1cc4-42b5-9414-b5e2
+
+http://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findItemsByKeywords&SERVICE-VERSION=1.0.0&SECURITY-APPNAME=ayalgell-columbo-PRD-045f8a2bd-9672103b&RESPONSE-DATA-FORMAT=JSON&keywords=harry%20potter%20phoenix
