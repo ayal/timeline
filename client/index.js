@@ -37,7 +37,8 @@ const randomDataSet = () => {
     points: [
       {"beginning": getTime('01/05/2010'), "ending": getTime('02/06/2010'), img: 'http://lorempixel.com/400/200/', title: 'kaki'},
       {"beginning": getTime('02/06/2011'), "ending": getTime('03/07/2011'), img: 'http://lorempixel.com/400/200/', title: 'popo'}
-    ]
+    ],
+    windowwidth: 100
   }
 }
 
@@ -192,8 +193,10 @@ export default class Axis extends React.Component {
 	</g>
       )
     });
+    
     return (
       <g id={this.props.id} transform={'translate(0, ' + (this.props.mtop) + ')'}>
+      {!this.props.big ? <rect className="window" stroke="black" y={-that.props.padding} x={$(window).width()/2 - that.props.data.windowwidth/2} fill="transparent" width={that.props.data.windowwidth} height={this.props.height} ></rect> : null}
       <rect className="bg" ref="bg" width="100%" height={this.props.height} transform={'translate(0, ' + -this.props.padding + ')'} x="0" y="0"></rect>
       <g className="axis timeaxis" ref="timeaxis"  strokeDasharray="10 10" transform={'translate(0, ' + -this.props.padding + ')'}></g>
       <g className="axis" ref="axis" transform={'translate(0, ' + (this.props.height - this.props.padding) + ')'}></g>
@@ -240,12 +243,13 @@ var Timeline = React.createClass({
 
 
     var domain = [this.props.data.beginning, this.props.data.ending];
+    var data = this.props.data;
 
     var fromScale2ToScale1Domain = function(s2) {
       var domain2 = s2.domain();
       var hscale = d3.time.scale()
 		     .domain([domain2[0], domain2[1]])
-		     .range([$(window).width()/2-50, $(window).width()/2+50]);
+		     .range([$(window).width()/2-data.windowwidth/2, $(window).width()/2 + data.windowwidth/2]);
       return [hscale.invert(0),hscale.invert($(window).width())];
     }
     
@@ -262,14 +266,14 @@ var Timeline = React.createClass({
 					       .range([0, settings1.width]);
       
       settings2.scale = this.state.scale2 || d3.time.scale()
-					       .domain([settings1.scale.invert($(window).width() / 2 - 50), settings1.scale.invert($(window).width() / 2 + 50)])
+					       .domain([settings1.scale.invert($(window).width() / 2 - data.windowwidth/2), settings1.scale.invert($(window).width() / 2 + data.windowwidth/2)])
 					       .range([0, settings2.width]);
 
     if (this.state.scale1Animate) {
       console.log('scale 1 animate');
       settings1.newscale = this.state.scale1Animate;
       settings2.newscale = d3.time.scale()
-			     .domain([settings1.newscale.invert($(window).width() / 2 - 50), settings1.newscale.invert($(window).width() / 2 + 50)])
+			     .domain([settings1.newscale.invert($(window).width() / 2 - data.windowwidth/2), settings1.newscale.invert($(window).width() / 2 + data.windowwidth/2)])
 			     .range([0, settings2.width]);
     }
 
