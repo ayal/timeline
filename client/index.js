@@ -43,11 +43,20 @@ const randomDataSet = () => {
 }
 
 export default class Axis extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sf: 10 / (this.props.scale(0) - this.props.scale(10))
+    };
+  }
+
   componentDidUpdate() {
     this.renderAxis();
   }
 
   componentDidMount() {
+    var that = this;
+
     this.renderAxis();
   }
 
@@ -90,9 +99,12 @@ export default class Axis extends React.Component {
     });
   }
 
+  
+
   renderAxis() {
+    console.log('rendering axis');
     var that = this;
-    
+
     var axis = d3.svg.axis()
 		 .orient('bottom')
 		 .ticks(this.props.tickTime, 1)
@@ -104,16 +116,15 @@ export default class Axis extends React.Component {
 		  .ticks(this.props.tickTime, 1)
 		  .scale(this.props.scale)
 		  .tickFormat("")
-      		  .tickSize(that.props.height, 0, 0)
+      		  .tickSize(that.props.height, 0, 0);
 
-    
     
     var xzoom = d3.behavior.zoom()
 		  .x(this.props.scale)
 		  .on("zoom", function(){
-		    console.log('zoom', that.props.scale.invert(that.props.width / 2));
-		    that.props.onZoom && that.props.onZoom(that.props.scale);
-		  });
+		    var scaleToZoom = that.props.scale;		    
+		    that.props.onZoom && that.props.onZoom(scaleToZoom);
+		  })
 
     var bg = d3.select(this.refs.bg)
 	       .on('click', function(){
@@ -126,7 +137,7 @@ export default class Axis extends React.Component {
 		 var dx = x - that.props.width / 2 ;
 		 var beginning = that.props.scale.invert(dx);
 		 var ending = that.props.scale.invert(that.props.width + dx);
-		 console.log('click bg, new dx, beg, end', dx, beginning, ending, xzoom.event);
+
 		 var newscale = d3.time
 				  .scale()
 				  .domain([beginning, ending])
@@ -136,14 +147,34 @@ export default class Axis extends React.Component {
 		 that.props.animateTo(newscale);
 
 		 
+	       })
+	       .on("wheel", function() {
+		 
+		 var sf = 10 / (that.props.scale(0) - that.props.scale(10));
+		 var k = that.state.sf / sf;
+
+		 if (k > 1 && d3.event.deltaY < 0) {
+		   console.log(k, d3.event);
+		   d3.event.stopPropagation();
+		 }
+
+		 if (k < 0.5 && d3.event.deltaY > 0) {
+		   console.log(k, d3.event);
+		   d3.event.stopPropagation();
+		 }
+
+		 
+
 	       });
 
+
+    d3.select('#' + this.props.id).call(xzoom)
+      
     d3.select(this.refs.axis).call(axis);
 
     d3.select(this.refs.timeaxis).call(axis2);
 
-    d3.select('#' + this.props.id).call(xzoom);
-
+    
     if (this.props.newscale) {
 	that.animate();
     }
@@ -214,6 +245,7 @@ var Timeline = React.createClass({
     return {};
   },
   render() {
+    var that = this;
     var props = this.props;
 
     var s1height = 100;
@@ -257,10 +289,6 @@ var Timeline = React.createClass({
       domain = fromScale2ToScale1Domain(this.state.scale2);
     }
 
-    if (!this.state.scale1) {
-      console.log('new scale 1 domain', domain);
-    }
-    
       settings1.scale = this.state.scale1 || d3.time.scale()
 					       .domain(domain)
 					       .range([0, settings1.width]);
@@ -292,7 +320,8 @@ var Timeline = React.createClass({
       
       <Axis big={true} {...settings2} {...this.props}
       onZoom={(scale2)=>{
-	this.setState({scale2,scale1:null, scale2Animate:null, scale1Animate:null});}}
+	this.setState({scale2,scale1:null, scale2Animate:null, scale1Animate:null});
+      }}
       animateTo={(scale2)=>{
 	this.setState({scale2Animate: scale2, scale1Animate:null});}}
 
@@ -300,8 +329,9 @@ var Timeline = React.createClass({
 
       <Axis {...settings1} {...this.props}
       
-      onZoom={(scale1)=>{
-	this.setState({scale1,scale2:null, scale2Animate:null, scale1Animate:null});}}
+      onZoom={(scale1)=>{	
+	this.setState({scale1,scale2:null, scale2Animate:null, scale1Animate:null});
+      }}
       
       animateTo={(scale1)=>{
 	this.setState({scale1Animate: scale1,scale2Animate:null});}}
