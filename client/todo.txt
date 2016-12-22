@@ -1,3 +1,4 @@
+- draw window
 - bug on click to move on big axis
 - jump on start: get rid of -5000 (decide on ratio between timelines in config)
 - max zoom in / out

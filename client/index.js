@@ -239,7 +239,19 @@ var Timeline = React.createClass({
     };
 
 
-    var domain = this.state.scale2 ? ([this.state.scale2.invert($(window).width() / 2 - 5000).getTime(), this.state.scale2.invert($(window).width() / 2 + 5000).getTime()]) : [this.props.data.beginning, this.props.data.ending];
+    var domain = [this.props.data.beginning, this.props.data.ending];
+
+    var fromScale2ToScale1Domain = function(s2) {
+      var domain2 = s2.domain();
+      var hscale = d3.time.scale()
+		     .domain([domain2[0], domain2[1]])
+		     .range([$(window).width()/2-50, $(window).width()/2+50]);
+      return [hscale.invert(0),hscale.invert($(window).width())];
+    }
+    
+    if (this.state.scale2) {
+      domain = fromScale2ToScale1Domain(this.state.scale2);
+    }
 
     if (!this.state.scale1) {
       console.log('new scale 1 domain', domain);
@@ -263,7 +275,7 @@ var Timeline = React.createClass({
 
     if (this.state.scale2Animate) {
       console.log('scale 2 animate');
-      var domain =  ([this.state.scale2Animate.invert($(window).width() / 2 - 5000).getTime(), this.state.scale2Animate.invert($(window).width() / 2 + 5000).getTime()]);
+      var domain =  fromScale2ToScale1Domain(this.state.scale2Animate);
       settings1.newscale = d3.time.scale()
 			     .domain(domain)
 			     .range([0, settings1.width]);  
