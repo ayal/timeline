@@ -33,12 +33,12 @@ var customTimeFormat = d3.time.format.multi([
 ]);
 
 window.configobj = {
-  beginning : getTime('01/01/2010'),
+  beginning : getTime('01/01/2005'),
   ending: getTime('01/01/2019'),
   points: [
     {offset: 0, "beginning": getTime('01/05/2010'), "ending": getTime('02/06/2010'), img: 'http://lorempixel.com/400/200/', title: 'kaki', classes: 'important'},
     {offset:-3, "beginning": getTime('02/06/2011'), "ending": getTime('03/07/2011'), img: 'http://lorempixel.com/400/200/', title: 'popo', classes: 'silly'},
-    {offset:-10, "beginning": getTime('02/06/2012'), "ending": getTime('02/06/2012'), img: 'http://lorempixel.com/400/200/', title: 'nunu'}
+    {offset:-4, "beginning": getTime('02/06/2012'), "ending": getTime('02/06/2012'), img: 'http://lorempixel.com/400/200/', title: 'nunu'}
   ],
   windowwidth: 100
 };
