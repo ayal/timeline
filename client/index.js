@@ -386,6 +386,7 @@ $(function(){
   ReactDOM.render((
     <Router history={browserHistory}>
     <Route path="/" component={ App } />
+    <Route path="/timeline/public" component={ App } />
     </Router>
   ), document.getElementById("myApp"));
 
