@@ -13,6 +13,8 @@ import _ from "underscore";
 
 import moment from "moment"
 
+import { Router, Route, Link, IndexRoute, browserHistory } from 'react-router'
+
 window.moment = moment;
 
 var getTime = function(s) {
@@ -26,21 +28,20 @@ var customTimeFormat = d3.time.format.multi([
   ["%I %p", function(d) { return d.getHours(); }],
   ["%a %d", function(d) { return d.getDay() && d.getDate() != 1; }],
   ["%b %d", function(d) { return d.getDate() != 1; }],
-  ["%B", function(d) { return d.getMonth(); }],
+  ["%B", function(d) { return d.getMonth() }],
   ["%Y", function() { return true; }]
 ]);
 
-const randomDataSet = () => {
-  return {
-    beginning : getTime('01/01/2010'),
-    ending: getTime('01/01/2019'),
-    points: [
-      {"beginning": getTime('01/05/2010'), "ending": getTime('02/06/2010'), img: 'http://lorempixel.com/400/200/', title: 'kaki'},
-      {"beginning": getTime('02/06/2011'), "ending": getTime('03/07/2011'), img: 'http://lorempixel.com/400/200/', title: 'popo'}
-    ],
-    windowwidth: 100
-  }
-}
+window.configobj = {
+  beginning : getTime('01/01/2010'),
+  ending: getTime('01/01/2019'),
+  points: [
+    {offset: 1, "beginning": getTime('01/05/2010'), "ending": getTime('02/06/2010'), img: 'http://lorempixel.com/400/200/', title: 'kaki', classes: 'important'},
+    {offset:-1, "beginning": getTime('02/06/2011'), "ending": getTime('03/07/2011'), img: 'http://lorempixel.com/400/200/', title: 'popo', classes: 'silly'},
+    {"beginning": getTime('02/06/2012'), "ending": getTime('02/06/2012'), img: 'http://lorempixel.com/400/200/', title: 'nunu'}
+  ],
+  windowwidth: 100
+};
 
 export default class Axis extends React.Component {
   constructor(props) {
@@ -61,24 +62,20 @@ export default class Axis extends React.Component {
   }
 
   animate() {
-    console.log('animating', this.props.id, this.props.newscale);
     var newscale = this.props.newscale;
     
     var that = this;
     
     var axis = d3.svg.axis()
 		 .orient('bottom')
-		 .ticks(this.props.tickTime, 1)
-		 .scale(newscale)
-		 .tickFormat(this.props.format)
+		 .scale(newscale);
 
     
     var axis2 = d3.svg.axis()
 		  .orient('bottom')
-		  .ticks(this.props.tickTime, 1)
 		  .scale(newscale)
-		  .tickFormat("")
-      		  .tickSize(that.props.height, 0, 0);
+      		  .tickSize(that.props.height, 0, 0)
+		  .tickFormat("");
     
     d3.select(this.refs.axis).transition()
 		  .each("end", function(){
@@ -90,32 +87,33 @@ export default class Axis extends React.Component {
     d3.select(this.refs.timeaxis).transition().duration(750).call(axis2);
 
 
-    d3.selectAll('#' + this.props.id + ' .point').transition().duration(750).attr('x', function(r){
+    d3.selectAll('#' + this.props.id + ' .point.rect').transition().duration(750).attr('x', function(r){
       return newscale(that.props.scale.invert(this.x.baseVal.value))
-    });
+    })
 
+      d3.selectAll('#' + this.props.id + ' .point.circ').transition().duration(750).attr('cx', function(r){
+	return newscale(that.props.scale.invert(this.cx.baseVal.value))
+      })
+
+      
     d3.selectAll('#' + this.props.id + ' .box').transition().duration(750).attr('x', function(r){
-      return newscale(that.props.scale.invert(this.x.baseVal.value))
+      return newscale(that.props.scale.invert((this.x || this.cx ).baseVal.value))
     });
   }
 
   
 
   renderAxis() {
-    console.log('rendering axis');
     var that = this;
 
     var axis = d3.svg.axis()
 		 .orient('bottom')
-		 .ticks(this.props.tickTime, 1)
 		 .scale(this.props.scale)
-		 .tickFormat(this.props.format)
 
     var axis2 = d3.svg.axis()
 		  .orient('bottom')
-		  .ticks(this.props.tickTime, 1)
+            	  .tickFormat("")
 		  .scale(this.props.scale)
-		  .tickFormat("")
       		  .tickSize(that.props.height, 0, 0);
 
     
@@ -126,45 +124,44 @@ export default class Axis extends React.Component {
 		    that.props.onZoom && that.props.onZoom(scaleToZoom);
 		  })
 
+      var whenclick = function(){
+	if (d3.event.defaultPrevented) return; // dragged
+
+	var svg = d3.select('svg');
+	var x = d3.mouse($('.bg')[0])[0];
+	var dx = x - that.props.width / 2 ;
+	var beginning = that.props.scale.invert(dx);
+	var ending = that.props.scale.invert(that.props.width + dx);
+	
+	console.log('click', x, dx, beginning, ending);
+
+	var newscale = d3.time
+			 .scale()
+			 .domain([beginning, ending])
+			 .range([0, that.props.width]);
+
+	
+	that.props.animateTo(newscale);
+
+	
+      };
+
+    d3.selectAll('#' + this.props.id + ' .point').on('click', whenclick);
+    var sf = 10 / (that.props.scale(0) - that.props.scale(10));
+    var k = that.state.sf / sf;
+      
     var bg = d3.select(this.refs.bg)
-	       .on('click', function(){
-		 console.log('click', d3.event.defaultPrevented)
-		 if (d3.event.defaultPrevented) return; // dragged
-
-		 var svg = d3.select('svg');
-		 var x = d3.mouse(this)[0];
-
-		 var dx = x - that.props.width / 2 ;
-		 var beginning = that.props.scale.invert(dx);
-		 var ending = that.props.scale.invert(that.props.width + dx);
-
-		 var newscale = d3.time
-				  .scale()
-				  .domain([beginning, ending])
-				  .range([0, that.props.width]);
-
-		 
-		 that.props.animateTo(newscale);
-
-		 
-	       })
+	       .on('click', whenclick)
+	       .on('wheel', null)
 	       .on("wheel", function() {
-		 
-		 var sf = 10 / (that.props.scale(0) - that.props.scale(10));
-		 var k = that.state.sf / sf;
 
-		 if (k > 1 && d3.event.deltaY < 0) {
-		   console.log(k, d3.event);
+		 if (k > 5 && d3.event.deltaY < 0) {
 		   d3.event.stopPropagation();
 		 }
 
-		 if (k < 0.5 && d3.event.deltaY > 0) {
-		   console.log(k, d3.event);
+		 if (k < 0.1 && d3.event.deltaY > 0) {
 		   d3.event.stopPropagation();
 		 }
-
-		 
-
 	       });
 
 
@@ -183,22 +180,30 @@ export default class Axis extends React.Component {
 
   render() {
     var that = this;
-    var rects = this.props.data.points;
-    var rectheight = that.props.big ? 10 : 2;
+    var rects = this.props.config.points;
+    var rectheight = that.props.big ? 10 : 4;
     rects = rects.map(function(p,i){
       var objprops = {
 	x: that.props.scale(p.beginning),
+	cx: that.props.scale(p.beginning),
 	y:  -(that.props.height / 2) + (p.offset * rectheight*2 || 0),
-	key: 'obj_' + i
+	cy:  -(that.props.height / 2) + (p.offset * rectheight*2 || 0),
+	
       };
 
       var rw = that.props.scale(p.ending) - that.props.scale(p.beginning);
       
       var rectprops = {
 	...objprops,
-	width: rw > 10 ? rw : 10,
+	width: rw,
 	height:rectheight,
-	key:'rect_' + i
+	key:'rect_' + i,
+      };
+
+      var circprops = {
+	...objprops,
+	r: 5,
+	key: 'circ_' + i,
       };
 
       var imgprops = {
@@ -206,28 +211,32 @@ export default class Axis extends React.Component {
 	width:100,
 	key: 'img_' + i
       };
+
+      var obj = (rw > 20 ?
+		 <rect className={"point rect " + p.classes} onClick={()=>(console.log(p))} {...rectprops}></rect>
+						    : (that.props.big ? null : <circle className={"point circ " + p.classes} onClick={()=>(console.log(p))} {...circprops} />))
       
       return (
-	<g className="boxwrap" key={"gg_" + i}>
+	<g className="boxwrap" key={"gg_" + i} {...objprops} >
 	{p.img && that.props.big ?
-	 (<foreignObject className="box" {...objprops}>
-	   <div className="infobox">
+	 (<foreignObject className="box" {...objprops} key={"fobj_" + i} width="200" height="300" y={objprops.y + rectheight} x={objprops.x}>
+	   <div className="infobox" >
 	   <h4>{p.title || 'HEADLINE'}</h4>
 	   <div className="text">{p.text || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas at lobortis arcu, id mollis magna. Nunc vel lectus nulla.'}</div>
 	   <img {...imgprops} src={p.img} />
 	   <a className="link" href={p.link || 'http://cat.com'} target="_blank">read more</a>
 	   </div>
+	   
 	    </foreignObject>)
 	    : null}
-	<rect className="point" onClick={()=>(console.log(p))} {...rectprops}>
-	</rect>
+	{obj}
 	</g>
       )
     });
     
     return (
       <g id={this.props.id} transform={'translate(0, ' + (this.props.mtop) + ')'}>
-      {!this.props.big ? <rect className="window" stroke="black" y={-that.props.padding} x={$(window).width()/2 - that.props.data.windowwidth/2} fill="transparent" width={that.props.data.windowwidth} height={this.props.height} ></rect> : null}
+      {!this.props.big ? <rect className="window" stroke="black" y={-that.props.padding} x={$(window).width()/2 - that.props.config.windowwidth/2} fill="transparent" width={that.props.config.windowwidth} height={this.props.height} ></rect> : null}
       <rect className="bg" ref="bg" width="100%" height={this.props.height} transform={'translate(0, ' + -this.props.padding + ')'} x="0" y="0"></rect>
       <g className="axis timeaxis" ref="timeaxis"  strokeDasharray="10 10" transform={'translate(0, ' + -this.props.padding + ')'}></g>
       <g className="axis" ref="axis" transform={'translate(0, ' + (this.props.height - this.props.padding) + ')'}></g>
@@ -257,7 +266,6 @@ var Timeline = React.createClass({
       mtop: 0,
       height: $(window).height() - s1height - s1padding,
       padding: 20,
-      format: customTimeFormat,
       tickTime: d3.time.months,
       tickValues: null
     };
@@ -268,14 +276,13 @@ var Timeline = React.createClass({
       mtop:settings2.height + settings2.padding,
       height: s1height,
       padding: s1padding,
-      format: customTimeFormat,
       tickTime: d3.time.years,
       tickValues: null
     };
 
 
-    var domain = [this.props.data.beginning, this.props.data.ending];
-    var data = this.props.data;
+    var domain = [this.props.config.beginning, this.props.config.ending];
+    var data = this.props.config;
 
     var fromScale2ToScale1Domain = function(s2) {
       var domain2 = s2.domain();
@@ -298,7 +305,6 @@ var Timeline = React.createClass({
 					       .range([0, settings2.width]);
 
     if (this.state.scale1Animate) {
-      console.log('scale 1 animate');
       settings1.newscale = this.state.scale1Animate;
       settings2.newscale = d3.time.scale()
 			     .domain([settings1.newscale.invert($(window).width() / 2 - data.windowwidth/2), settings1.newscale.invert($(window).width() / 2 + data.windowwidth/2)])
@@ -306,7 +312,6 @@ var Timeline = React.createClass({
     }
 
     if (this.state.scale2Animate) {
-      console.log('scale 2 animate');
       var domain =  fromScale2ToScale1Domain(this.state.scale2Animate);
       settings1.newscale = d3.time.scale()
 			     .domain(domain)
@@ -315,8 +320,8 @@ var Timeline = React.createClass({
     }
 
     return (
-      <svg width={$(window).width()} height={$(window).height()} >
       
+      <svg width={$(window).width()} height={$(window).height()} >
       
       <Axis big={true} {...settings2} {...this.props}
       onZoom={(scale2)=>{
@@ -346,11 +351,14 @@ var Timeline = React.createClass({
 
 
 export class App extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      data: randomDataSet()
-    };
+  constructor(props) {
+    super(props);
+  }
+
+  componentWillMount() {
+    if (!this.props.location.hash) {
+      location.hash = encodeURIComponent(JSON.stringify(configobj));
+    }
   }
 
   componentDidMount() {
@@ -360,18 +368,26 @@ export class App extends React.Component {
     })
   }
 
-  fire() {
-    this.state.data.ending += 1000000; 
-    this.forceUpdate();
-  }
-
   render() {
+    if (!this.props.location.hash) {
+      return null;
+    }
+    var config = JSON.parse(decodeURIComponent(this.props.location.hash.split('#')[1]));
     return (
       <div className="timewrap">
-      <Timeline {...this.state} />
+      <Timeline config={config} />
       </div>
     );
   }
 }
 
-ReactDOM.render(<App/>, document.getElementById("myApp"));
+
+$(function(){
+  ReactDOM.render((
+    <Router history={browserHistory}>
+    <Route path="/" component={ App } />
+    </Router>
+  ), document.getElementById("myApp"));
+
+})
+

@@ -1,3 +1,5 @@
+- put dates on boxes
+- put extent in config
 - first>second draw label axis jump
 - categories
 - change window width redraw - make wwidth a prop of timeline
@@ -13,6 +15,10 @@
 - disable double click
 - make sure offset works
 - hebrew
+- github
+- browser compat.
+- box design
+- mobile?
 
 
 ----
